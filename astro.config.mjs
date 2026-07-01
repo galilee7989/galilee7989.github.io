@@ -2,6 +2,6 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://www.galilee.org.tw',
+  site: 'https://galilee.org.tw',
   integrations: [sitemap()],
 });
