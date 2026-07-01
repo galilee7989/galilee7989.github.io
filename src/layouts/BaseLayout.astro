@@ -1,0 +1,85 @@
+---
+import { navItems } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = '財團法人基督教加利利傳道會',
+  description = '基督教加利利傳道會網站，提供事工介紹、禱告信、照片與聯絡資訊。',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles/global.css" />
+  </head>
+  <body>
+    <div class="topbar"></div>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/" aria-label="回到首頁">
+          <img class="brand-logo" src="/images/logo.png" alt="加利利傳道會標誌" />
+          <span>
+            <strong>加利利傳道會</strong>
+            <small>Galilee Mission</small>
+          </span>
+        </a>
+        <nav class="site-nav" aria-label="主選單">
+          {navItems.map((item) => <a href={item.href}>{item.label}</a>)}
+          <a class="nav-login" href="http://127.0.0.1:4330/" target="_blank" rel="noopener">登入</a>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div>
+            <strong>財團法人基督教加利利傳道會</strong>
+            <p>新北市新店區北新路一段 89 號 10 樓之 3</p>
+            <p>把福音帶進軍中，建立職場宣教士。</p>
+          </div>
+          <div>
+            <p>電話：02-29137225</p>
+            <p>傳真：02-86658221</p>
+          </div>
+          <div>
+            <p>網址：https://www.galilee.org.tw</p>
+          </div>
+        </div>
+        <p class="footer-note">© {new Date().getFullYear()} 財團法人基督教加利利傳道會　Galilee Mission．願榮耀歸與神。</p>
+      </div>
+    </footer>
+    <script>
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              io.unobserve(entry.target);
+            }
+          }
+        },
+        { threshold: 0.12 }
+      );
+      document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+    </script>
+  </body>
+</html>

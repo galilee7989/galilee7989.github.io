@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import PrayletterCard from '../components/PrayletterCard.astro';
+import { contact, galleryImages } from '../data/site';
+import prayletters from '../data/prayletters.json';
+
+const latest = prayletters[0];
+---
+
+<BaseLayout>
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy reveal">
+        <span class="hero-eyebrow">Galilee Mission · 軍中福音事工</span>
+        <h1>把福音帶進軍中<br /><span class="accent">建立職場宣教士</span></h1>
+        <p>財團法人基督教加利利傳道會，關心現役士官兵的生活與靈命，連結退除役弟兄姊妹，協助眾教會參與軍中福音事工。</p>
+        <div class="hero-actions">
+          <a class="button primary" href="/prayletter/">最新禱告信</a>
+          <a class="button secondary" href="#contact">奉獻與聯絡</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <SectionTitle title="最 新 消 息" kicker="Latest News" />
+      {latest ? (
+        <div class="latest-news reveal">
+          <p>{latest.title}已公佈，歡迎下載與代禱。</p>
+          <a class="button primary" href={`/prayletter/${latest.slug}/`}>查看最新禱告信</a>
+        </div>
+      ) : (
+        <p class="center">禱告信資料準備中。</p>
+      )}
+    </div>
+  </section>
+
+  <section class="container intro-section">
+    <SectionTitle title="軍 福 簡 介" kicker="About Us" />
+    <p class="lead center reveal">
+      加利利傳道會關心現役士官兵的生活與靈命，連結退除役弟兄姊妹團契，並協助教會參與軍中福音事工。
+    </p>
+  </section>
+
+  <section class="band">
+    <div class="container">
+      <SectionTitle title="異 象 與 事 工" kicker="Vision and Ministry" />
+      <div class="vision-wrap reveal">
+        <p class="vision-line"><strong>1 2 3：</strong>One vision, Two points, Three works</p>
+      </div>
+      <div class="ministry-grid">
+        <article class="reveal">
+          <div class="num">1</div>
+          <h2>一個異象：大使命</h2>
+          <p>馬可福音16章15節：你們往普天下去，傳福音給萬民聽。</p>
+        </article>
+        <article class="reveal">
+          <div class="num">2</div>
+          <h2>二點看見</h2>
+          <p>把福音帶進軍中，建立職場宣教士。</p>
+        </article>
+        <article class="reveal">
+          <div class="num">3</div>
+          <h2>三項事工</h2>
+          <p>輔導現役士官兵、關心退除役團契與連結、協助眾教會參與軍中福音事工。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="container intro-section">
+    <SectionTitle title="禱 告 信" kicker="Prayer Letters" />
+    <div class="pray-grid">
+      {prayletters.slice(0, 6).map((item) => <PrayletterCard item={item} />)}
+    </div>
+    <div class="page-actions" style="justify-content:center">
+      <a class="button secondary" href="/prayletter/">查看全部禱告信</a>
+    </div>
+  </section>
+
+  <section class="container gallery-preview">
+    <SectionTitle title="照 片 區" kicker="Gallery" />
+    <div class="gallery-grid">
+      {galleryImages.map((image) => <img class="reveal" src={image.src} alt={image.alt} loading="lazy" />)}
+    </div>
+  </section>
+
+  <section id="contact" class="band contact-section">
+    <div class="container">
+      <SectionTitle title="奉 獻 與 聯 絡" kicker="Support and Contact" />
+      <div class="contact-card reveal">
+        <div class="contact-grid">
+          <div>
+            <p><strong>{contact.name}</strong></p>
+            <p>地址：{contact.address}</p>
+            <p>電話：{contact.phone}</p>
+            <p>傳真：{contact.fax}</p>
+          </div>
+          <div>
+            <p><strong>奉獻方式</strong></p>
+            <p>劃撥帳號：{contact.postalAccount}</p>
+            <p>ATM轉帳：{contact.bank}</p>
+            <p>帳號：{contact.bankAccount}</p>
+          </div>
+          <div>
+            <p><strong>同工聯絡手機</strong></p>
+            {contact.coworkerPhones.map((phone) => <p>{phone}</p>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

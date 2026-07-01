@@ -1,0 +1,19 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SectionTitle from '../../components/SectionTitle.astro';
+import PrayletterCard from '../../components/PrayletterCard.astro';
+import prayletters from '../../data/prayletters.json';
+---
+
+<BaseLayout title="禱告信｜財團法人基督教加利利傳道會">
+  <section class="page-head">
+    <div class="container">
+      <SectionTitle title="禱 告 信" kicker="Prayer Letters" />
+    </div>
+  </section>
+  <section class="container intro-section">
+    <div class="pray-grid">
+      {prayletters.map((item) => <PrayletterCard item={item} />)}
+    </div>
+  </section>
+</BaseLayout>

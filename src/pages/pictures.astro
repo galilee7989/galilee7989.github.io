@@ -1,0 +1,18 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionTitle from '../components/SectionTitle.astro';
+import { galleryImages } from '../data/site';
+---
+
+<BaseLayout title="照片區｜財團法人基督教加利利傳道會">
+  <section class="page-head">
+    <div class="container">
+      <SectionTitle title="照 片 區" kicker="Gallery" />
+    </div>
+  </section>
+  <section class="container gallery-preview">
+    <div class="gallery-grid large">
+      {galleryImages.map((image) => <img class="reveal" src={image.src} alt={image.alt} loading="lazy" />)}
+    </div>
+  </section>
+</BaseLayout>

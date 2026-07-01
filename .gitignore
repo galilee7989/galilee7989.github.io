@@ -1,0 +1,15 @@
+# 相依套件與建置產物
+node_modules/
+dist/
+.astro/
+
+# 記錄檔
+preview.log
+npm-debug.log*
+
+# 本機預覽檔（非網站內容）
+preview.html
+preview-*.html
+
+# 後台密碼設定（避免公開；伺服器啟動時會自動重建預設值）
+scripts/admin-config.json

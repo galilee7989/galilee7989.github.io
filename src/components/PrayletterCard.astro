@@ -1,0 +1,19 @@
+---
+interface Props {
+  item: {
+    title: string;
+    slug: string;
+    pdf: string;
+    date: string;
+  };
+}
+
+const { item } = Astro.props;
+---
+
+<article class="pray-card reveal">
+  <a href={`/prayletter/${item.slug}/`} target="_blank" rel="noopener">
+    <h2>{item.title}</h2>
+    <span class="read">閱讀禱告信</span>
+  </a>
+</article>
