@@ -785,28 +785,33 @@ img {
   background: var(--white);
 }
 
-/* ---------- 異象與事工方框背景圖 + 移入的照片 (added) ---------- */
+/* ---------- 異象與事工方框：hero.png 局部暗色背景 (added) ---------- */
 .ministry-grid article {
-  background-size: cover;
-  background-position: center;
+  background-image:
+    linear-gradient(rgba(24, 15, 7, 0.74), rgba(24, 15, 7, 0.86)),
+    url("/images/hero.png");
+  background-size: 240%;
+  background-repeat: no-repeat;
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
-.ministry-grid article:nth-child(1) {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.92)),
-    url("/images/galilee01.jpg");
+.ministry-grid article:nth-child(1) { background-position: 12% 38%; }
+.ministry-grid article:nth-child(2) { background-position: 50% 45%; }
+.ministry-grid article:nth-child(3) { background-position: 88% 38%; }
+
+.ministry-grid article h2 {
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
-.ministry-grid article:nth-child(2) {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.92)),
-    url("/images/galilee04.jpg");
+.ministry-grid article p {
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
 }
 
-.ministry-grid article:nth-child(3) {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.92)),
-    url("/images/galilee05.jpg");
+.ministry-grid .num {
+  background: rgba(244, 180, 60, 0.22);
+  color: var(--gold-soft);
 }
 
 .ministry-gallery {
