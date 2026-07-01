@@ -1,0 +1,40 @@
+media:
+  input: public/uploads
+  output: /uploads
+
+content:
+  - name: prayletters
+    label: 禱告信
+    type: file
+    path: src/data/prayletters.json
+    format: json
+    list: true
+    fields:
+      - name: title
+        label: 標題（例：2026年05月禱告信）
+        type: string
+      - name: slug
+        label: 網址代碼（例：2026-05）
+        type: string
+      - name: date
+        label: 日期
+        type: date
+      - name: pdf
+        label: PDF 檔案
+        type: file
+      - name: originalUrl
+        label: 原始網址（可留空）
+        type: string
+  - name: gallery
+    label: 照片
+    type: file
+    path: src/data/gallery.json
+    format: json
+    list: true
+    fields:
+      - name: src
+        label: 圖片
+        type: image
+      - name: alt
+        label: 說明文字
+        type: string

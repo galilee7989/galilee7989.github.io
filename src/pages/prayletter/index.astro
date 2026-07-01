@@ -3,6 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import SectionTitle from '../../components/SectionTitle.astro';
 import PrayletterCard from '../../components/PrayletterCard.astro';
 import prayletters from '../../data/prayletters.json';
+
+const sortedLetters = [...prayletters].sort((a, b) => new Date(b.date) - new Date(a.date));
 ---
 
 <BaseLayout title="禱告信｜財團法人基督教加利利傳道會">
@@ -13,7 +15,7 @@ import prayletters from '../../data/prayletters.json';
   </section>
   <section class="container intro-section">
     <div class="pray-grid">
-      {prayletters.map((item) => <PrayletterCard item={item} />)}
+      {sortedLetters.map((item) => <PrayletterCard item={item} />)}
     </div>
   </section>
 </BaseLayout>

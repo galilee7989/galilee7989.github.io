@@ -5,7 +5,8 @@ import PrayletterCard from '../components/PrayletterCard.astro';
 import { contact, galleryImages } from '../data/site';
 import prayletters from '../data/prayletters.json';
 
-const latest = prayletters[0];
+const sortedLetters = [...prayletters].sort((a, b) => new Date(b.date) - new Date(a.date));
+const latest = sortedLetters[0];
 ---
 
 <BaseLayout>
@@ -76,7 +77,7 @@ const latest = prayletters[0];
   <section class="container intro-section">
     <SectionTitle title="禱 告 信" kicker="Prayer Letters" />
     <div class="pray-grid">
-      {prayletters.slice(0, 6).map((item) => <PrayletterCard item={item} />)}
+      {sortedLetters.slice(0, 6).map((item) => <PrayletterCard item={item} />)}
     </div>
     <div class="page-actions" style="justify-content:center">
       <a class="button secondary" href="/prayletter/">查看全部禱告信</a>
