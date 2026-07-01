@@ -18,30 +18,73 @@ const { item } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{item.title}｜財團法人基督教加利利傳道會</title>
     <style>
-      html, body { height: 100%; margin: 0; background: #2a2622; }
-      .load {
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #fcd77a;
-        font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
-        font-size: 18px;
-        letter-spacing: 0.1em;
+      :root { --orange: #e35a0f; --gold: #f4b43c; }
+      html, body { margin: 0; background: #2a2622; font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
+      .bar {
+        position: sticky; top: 0; z-index: 5;
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 12px 16px; background: #1f1a15; color: #fff;
       }
-      .load a { color: #fff; text-decoration: underline; }
+      .bar b { font-size: 16px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .bar a { color: var(--gold); font-size: 14px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+      #pdf { padding: 14px 10px 40px; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+      #pdf canvas { width: 100%; max-width: 900px; height: auto; background: #fff; border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+      .msg { color: #fcd77a; text-align: center; padding: 50px 16px; font-size: 16px; line-height: 1.9; }
+      .msg a { color: #fff; }
     </style>
   </head>
   <body>
-    <div class="load" id="load">PDF 載入中，請稍候…</div>
-    <script is:inline define:vars={{ pdf: item.pdf }}>
-      fetch(pdf)
-        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.blob(); })
-        .then(function (b) { window.location.replace(URL.createObjectURL(b)); })
-        .catch(function () {
-          document.getElementById('load').innerHTML =
-            'PDF 載入失敗，<a href="' + pdf + '">點此開啟</a>';
-        });
+    <div class="bar">
+      <a href="/prayletter/">← 禱告信列表</a>
+      <b>{item.title}</b>
+      <a href={item.pdf} target="_blank" rel="noopener">開新視窗</a>
+    </div>
+    <div id="pdf" data-pdf={item.pdf}>
+      <div class="msg" id="msg">PDF 載入中，請稍候…</div>
+    </div>
+
+    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script is:inline define:vars={{ pdfUrl: item.pdf }}>
+      (function () {
+        var container = document.getElementById('pdf');
+        var msg = document.getElementById('msg');
+        function fail() {
+          container.innerHTML =
+            '<div class="msg">無法在頁面內顯示，請 <a href="' + pdfUrl + '" target="_blank" rel="noopener">點此開啟 PDF</a>。</div>';
+        }
+        var pdfjsLib = window.pdfjsLib;
+        if (!pdfjsLib) { fail(); return; }
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        fetch(pdfUrl)
+          .then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
+          .then(function (buf) { return pdfjsLib.getDocument({ data: buf }).promise; })
+          .then(function (pdf) {
+            container.innerHTML = '';
+            var width = Math.min((container.clientWidth || 360) - 20, 900);
+            var chain = Promise.resolve();
+            for (var n = 1; n <= pdf.numPages; n++) {
+              (function (n) {
+                chain = chain.then(function () {
+                  return pdf.getPage(n).then(function (page) {
+                    var base = page.getViewport({ scale: 1 });
+                    var vp = page.getViewport({ scale: (width / base.width) * dpr });
+                    var canvas = document.createElement('canvas');
+                    canvas.width = vp.width;
+                    canvas.height = vp.height;
+                    canvas.style.width = (vp.width / dpr) + 'px';
+                    container.appendChild(canvas);
+                    return page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+                  });
+                });
+              })(n);
+            }
+            return chain;
+          })
+          .catch(fail);
+      })();
     </script>
   </body>
 </html>
