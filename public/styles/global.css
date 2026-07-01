@@ -784,3 +784,31 @@ img {
   border-radius: 8px;
   background: var(--white);
 }
+
+/* ---------- 異象與事工方框背景圖 + 移入的照片 (added) ---------- */
+.ministry-grid article {
+  background-size: cover;
+  background-position: center;
+}
+
+.ministry-grid article:nth-child(1) {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.92)),
+    url("/images/galilee01.jpg");
+}
+
+.ministry-grid article:nth-child(2) {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.92)),
+    url("/images/galilee04.jpg");
+}
+
+.ministry-grid article:nth-child(3) {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.92)),
+    url("/images/galilee05.jpg");
+}
+
+.ministry-gallery {
+  margin-top: 44px;
+}

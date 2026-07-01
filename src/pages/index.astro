@@ -40,7 +40,7 @@ const latest = prayletters[0];
   <section class="container intro-section">
     <SectionTitle title="軍 福 簡 介" kicker="About Us" />
     <p class="lead center reveal">
-      加利利傳道會關心現役士官兵的生活與靈命，連結退除役弟兄姊妹團契，並協助教會參與軍中福音事工。
+      加利利傳道會關心現役士官兵的生活與靈命，<br />連結退除役弟兄姊妹團契，<br />並協助教會參與軍中福音事工。
     </p>
   </section>
 
@@ -67,6 +67,9 @@ const latest = prayletters[0];
           <p>輔導現役士官兵、關心退除役團契與連結、協助眾教會參與軍中福音事工。</p>
         </article>
       </div>
+      <div class="gallery-grid ministry-gallery">
+        {galleryImages.map((image) => <img class="reveal" src={image.src} alt={image.alt} loading="lazy" />)}
+      </div>
     </div>
   </section>
 
@@ -77,13 +80,6 @@ const latest = prayletters[0];
     </div>
     <div class="page-actions" style="justify-content:center">
       <a class="button secondary" href="/prayletter/">查看全部禱告信</a>
-    </div>
-  </section>
-
-  <section class="container gallery-preview">
-    <SectionTitle title="照 片 區" kicker="Gallery" />
-    <div class="gallery-grid">
-      {galleryImages.map((image) => <img class="reveal" src={image.src} alt={image.alt} loading="lazy" />)}
     </div>
   </section>
 
