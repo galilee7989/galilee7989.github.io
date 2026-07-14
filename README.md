@@ -59,15 +59,20 @@ npm run build
 
 匯入腳本會下載 PDF 到 `public/prayletters/`，並重建 `src/data/prayletters/` 裡的一篇一檔 JSON。既有 PDF 會跳過不重抓。
 
-## 預留 Decap CMS
+## 雲端後台
 
-雲端後台使用 Pages CMS，禱告信已改成 content collection，新增時會是一篇一檔，不再編輯大型 JSON 陣列。
+正式後台已部署在：
 
-建議等第一版上線穩定後再加：
+```text
+https://admin-cloud-six.vercel.app/
+```
 
-- `/admin/` 後台入口
-- GitHub OAuth 或部署平台 Identity
-- 禱告信 collection：標題、月份、PDF
+網站選單右側的「登入」會開啟這個雲端後台。新增禱告信時，後台會自動上傳 PDF，並透過 GitHub API 寫入：
+
+- `public/prayletters/<年>/<年月>.pdf`
+- `src/data/prayletters/<年-月>.json`
+
+Vercel 環境變數需設定 `ADMIN_PASSWORD`、`ADMIN_SESSION_SECRET`、`GITHUB_TOKEN`；實際值不可寫進 repo。
 
 ## 部署
 
@@ -117,9 +122,10 @@ dist/
 
 ### 登入後台
 
-- 網站選單右側有「登入」按鈕，會開啟本機後台 `http://127.0.0.1:4330/`（需先啟動 `後台管理.bat`）。
-- 預設密碼為 `galilee2026`，登入後可在「帳號」分頁修改；密碼存於 `scripts/admin-config.json`。
-- 因為是靜態網站，實際編輯需透過本機後台程式執行，登入頁與管理面板僅在本機（127.0.0.1）運作，不會對外公開。
+- 網站選單右側有「登入」按鈕，會開啟雲端後台 `https://admin-cloud-six.vercel.app/`。
+- 使用 Vercel Production 環境變數 `ADMIN_PASSWORD` 設定的密碼登入。
+- 發布禱告信後，後台會 commit 到 GitHub repo，GitHub Pages 約 1-2 分鐘後重建正式網站。
+- 本機後台 `http://127.0.0.1:4330/` 仍可當備用工具使用，需先啟動 `後台管理.bat`。
 
 ## 一鍵啟動
 

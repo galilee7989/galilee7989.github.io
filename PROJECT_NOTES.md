@@ -25,14 +25,21 @@
 
 有兩種方式，擇一即可：
 
-### A. 網頁後台（推薦，任何裝置皆可）
+### A. 客製雲端後台（推薦）
+- 正式網址：https://admin-cloud-six.vercel.app/
+- 程式在 `admin-cloud/`，部署到 Vercel 專案 `admin-cloud`。
+- 本機預覽：`npm run admin-cloud`，開 `http://127.0.0.1:8787/`。
+- 上雲後透過 GitHub API 寫入 `src/data/prayletters/<YYYY-MM>.json` 與 `public/prayletters/<YYYY>/<YYYYMM>.pdf`。
+- 需要在部署平台設定 `ADMIN_PASSWORD`、`ADMIN_SESSION_SECRET`、`GITHUB_TOKEN` 等環境變數；不得寫入 repo。
+- 網站選單的「登入」按鈕即連到此後台。
+
+### B. Pages CMS 網頁後台（備用）
 - 到 https://app.pagescms.org ，用 GitHub 帳號 galilee7989 登入，開啟 repo `galilee7989.github.io`。
 - 左側「禱告信」「照片」→ 新增項目 → 填欄位、上傳 PDF/圖片 → Save。
 - 存檔即自動 commit 到 repo，GitHub Actions 約 1–2 分鐘重建上線。
 - 設定檔為 repo 根目錄的 `.pages.yml`；CMS 上傳的檔案存到 `public/uploads/`。
-- 網站選單的「登入」按鈕即連到 app.pagescms.org。
 
-### B. 本機後台
+### C. 本機後台
 - 雙擊 `後台管理.bat`（或 `npm run admin`）→ 瀏覽器開 http://127.0.0.1:4330/ → 密碼在 `scripts/admin-config.json`。
 - 新增禱告信／照片後，`git commit` + `git push` 讓網站更新。
 
@@ -67,4 +74,4 @@
 - 推上 GitHub Pages、接自訂網域 galilee.org.tw 並啟用 HTTPS。
 - 禱告信改用 PDF.js 內嵌檢視，修正手機無法觀看。
 - 加入 Pages CMS 網頁後台（.pages.yml），可從任何瀏覽器登入管理。
-- 「登入」鈕改連 Pages CMS。
+- 加入客製雲端後台 `admin-cloud/` 並部署到 Vercel；「登入」鈕改連客製後台。
