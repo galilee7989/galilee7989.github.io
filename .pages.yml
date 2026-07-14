@@ -1,14 +1,36 @@
 media:
-  input: public/uploads
-  output: /uploads
+  - name: uploads
+    label: 一般上傳
+    input: public/uploads
+    output: /uploads
+  - name: prayletter-pdfs
+    label: 禱告信 PDF
+    input: public/prayletters
+    output: /prayletters
+    extensions: [pdf]
+  - name: gallery-images
+    label: 照片
+    input: public/uploads
+    output: /uploads
+    categories: [image]
 
 content:
   - name: prayletters
     label: 禱告信
-    type: file
-    path: src/data/prayletters.json
+    type: collection
+    path: src/data/prayletters
     format: json
-    list: true
+    filename:
+      template: "{fields.slug}.json"
+      field: false
+    view:
+      fields: [slug, date, pdf]
+      primary: title
+      sort: [date, slug, title]
+      search: [title, slug]
+      default:
+        sort: date
+        order: desc
     fields:
       - name: title
         label: 標題（例：2026年05月禱告信）
@@ -22,6 +44,9 @@ content:
       - name: pdf
         label: PDF 檔案
         type: file
+        options:
+          media: prayletter-pdfs
+          extensions: [pdf]
       - name: originalUrl
         label: 原始網址（可留空）
         type: string
@@ -35,6 +60,8 @@ content:
       - name: src
         label: 圖片
         type: image
+        options:
+          media: gallery-images
       - name: alt
         label: 說明文字
         type: string

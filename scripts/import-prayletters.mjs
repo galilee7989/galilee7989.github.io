@@ -76,9 +76,13 @@ for (const post of posts) {
 
 items.sort((a, b) => b.slug.localeCompare(a.slug));
 
-await writeFile(
-  join(root, 'src', 'data', 'prayletters.json'),
-  `${JSON.stringify(items, null, 2)}\n`,
-);
+const dataDir = join(root, 'src', 'data', 'prayletters');
+await mkdir(dataDir, { recursive: true });
+for (const item of items) {
+  await writeFile(
+    join(dataDir, `${item.slug}.json`),
+    `${JSON.stringify(item, null, 2)}\n`,
+  );
+}
 
 console.log(`Imported ${items.length} prayer letters.`);

@@ -44,7 +44,7 @@
 
 ## 五、資料與重要檔案
 
-- 禱告信資料：`src/data/prayletters.json`（陣列，每筆有 title / slug / date / pdf）。PDF 檔在 `public/prayletters/<年>/<年月>.pdf`。
+- 禱告信資料：`src/data/prayletters/`（一篇一個 JSON，每筆有 title / slug / date / pdf）。PDF 檔在 `public/prayletters/<年>/<年月>.pdf` 或 Pages CMS 上傳選定的位置。
 - 照片資料：`src/data/gallery.json`（陣列，每筆 src / alt）。圖片在 `public/images/`。
 - 首頁與禱告信列表會依 `date` 由新到舊自動排序，所以新增的內容會排到最前面。
 - 網站樣式：`public/styles/global.css`。版面元件在 `src/layouts`、`src/components`、`src/pages`。

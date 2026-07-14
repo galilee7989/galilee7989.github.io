@@ -3,9 +3,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import SectionTitle from '../components/SectionTitle.astro';
 import PrayletterCard from '../components/PrayletterCard.astro';
 import { contact, galleryImages } from '../data/site';
-import prayletters from '../data/prayletters.json';
+import { prayletters, sortPrayletters } from '../data/prayletters';
 
-const sortedLetters = [...prayletters].sort((a, b) => new Date(b.date) - new Date(a.date));
+const sortedLetters = sortPrayletters(prayletters);
 const latest = sortedLetters[0];
 ---
 

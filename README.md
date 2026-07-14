@@ -1,6 +1,6 @@
 # 加利利傳道會靜態網站
 
-這個專案使用 Astro 產生純靜態網站。固定頁面維持靜態，禱告信用 `src/data/prayletters.json` 產生列表與單篇頁，PDF 存在 `public/prayletters/`。
+這個專案使用 Astro 產生純靜態網站。固定頁面維持靜態，禱告信用 `src/data/prayletters/` 裡的一篇一檔 JSON 產生列表與單篇頁，PDF 存在 `public/prayletters/`。
 
 ## 常用指令
 
@@ -30,7 +30,7 @@ http://127.0.0.1:4322/
 public/prayletters/2026/202605.pdf
 ```
 
-2. 編輯 `src/data/prayletters.json`，在最前面新增一筆：
+2. 在 `src/data/prayletters/` 新增一個 JSON 檔，例如 `2026-05.json`：
 
 ```json
 {
@@ -57,11 +57,11 @@ npm run import:prayletters
 npm run build
 ```
 
-匯入腳本會下載 PDF 到 `public/prayletters/`，並重建 `src/data/prayletters.json`。既有 PDF 會跳過不重抓。
+匯入腳本會下載 PDF 到 `public/prayletters/`，並重建 `src/data/prayletters/` 裡的一篇一檔 JSON。既有 PDF 會跳過不重抓。
 
 ## 預留 Decap CMS
 
-目前第一版不啟用後台，降低維護成本。若之後需要讓同工用瀏覽器登入上傳 PDF，可加入 Decap CMS，管理同一份 `src/data/prayletters.json` 或改成 content collection。
+雲端後台使用 Pages CMS，禱告信已改成 content collection，新增時會是一篇一檔，不再編輯大型 JSON 陣列。
 
 建議等第一版上線穩定後再加：
 
@@ -98,7 +98,7 @@ dist/
 2. 瀏覽器會開啟 `http://127.0.0.1:4330/`。
 3. 選擇 PDF、填年份與月份（標題留空會自動用「YYYY年MM月禱告信」），按「新增禱告信」。
    - PDF 會自動存到 `public/prayletters/<年>/<年月>.pdf`
-   - `src/data/prayletters.json` 會自動新增並依日期由新到舊排序
+   - `src/data/prayletters/<年-月>.json` 會自動新增，網站依日期由新到舊排序
 4. 按「重新建置網站」（等同 `npm run build`），禱告信分頁即更新。
 5. 關閉後台：在黑色視窗按 `Ctrl+C`。
 

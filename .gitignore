@@ -6,6 +6,7 @@ dist/
 # 記錄檔
 preview.log
 npm-debug.log*
+*.bak-*
 
 # 本機預覽檔（非網站內容）
 preview.html
