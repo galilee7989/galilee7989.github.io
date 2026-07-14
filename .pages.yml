@@ -24,32 +24,48 @@ content:
       template: "{fields.slug}.json"
       field: false
     view:
-      fields: [slug, date, pdf]
+      fields: [title, slug, date, pdf]
       primary: title
-      sort: [date, slug, title]
-      search: [title, slug]
+      sort: [slug, date, title]
+      search: [title, slug, pdf]
       default:
-        sort: date
+        sort: slug
         order: desc
     fields:
       - name: title
-        label: 標題（例：2026年05月禱告信）
+        label: 標題
         type: string
+        required: true
+        description: 例：2026年07月禱告信
+        options:
+          maxlength: 40
       - name: slug
-        label: 網址代碼（例：2026-05）
+        label: 月份代碼
         type: string
+        required: true
+        description: 排序與網址用。格式固定為西元年-月份，例如 2026-07。
+        pattern:
+          regex: "^[0-9]{4}-(0[1-9]|1[0-2])$"
+          message: 請使用 YYYY-MM 格式，例如 2026-07
       - name: date
-        label: 日期
+        label: 發布日期
         type: date
+        required: true
+        description: 通常選該月份 1 日即可；清單以月份代碼排序。
+        options:
+          format: yyyy-MM-dd
       - name: pdf
         label: PDF 檔案
         type: file
+        required: true
+        description: 上傳或選擇本月份禱告信 PDF。
         options:
           media: prayletter-pdfs
           extensions: [pdf]
       - name: originalUrl
-        label: 原始網址（可留空）
+        label: 舊站原始網址
         type: string
+        hidden: true
   - name: gallery
     label: 照片
     type: file
