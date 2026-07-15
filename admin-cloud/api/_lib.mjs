@@ -135,11 +135,15 @@ export async function writeLocalPrayletter({ entry, pdfBase64 }) {
 }
 
 async function github(method, urlPath, body) {
-  if (!process.env.GITHUB_TOKEN) throw new Error('GITHUB_TOKEN 未設定');
+  const token = String(process.env.GITHUB_TOKEN || '').trim();
+  if (!token) throw new Error('GITHUB_TOKEN 未設定');
+  if (!/^[\x20-\x7E]+$/.test(token)) {
+    throw new Error('GITHUB_TOKEN 格式錯誤，請重新貼 GitHub 產生的 token，不要包含中文或說明文字');
+  }
   const res = await fetch(`https://api.github.com${urlPath}`, {
     method,
     headers: {
-      authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      authorization: `Bearer ${token}`,
       accept: 'application/vnd.github+json',
       'x-github-api-version': '2022-11-28',
       'content-type': 'application/json',

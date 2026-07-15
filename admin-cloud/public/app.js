@@ -274,6 +274,13 @@ async function boot() {
   state.authed = session.authenticated;
   state.env = session.env || {};
   if (!state.authed) return renderLogin();
+  if (!state.env.GITHUB_TOKEN) {
+    state.items = [];
+    renderApp();
+    showForm('err', 'GITHUB_TOKEN 未設定：請先到 Vercel Production 新增 GitHub token，才能讀取與發布禱告信。');
+    document.getElementById('activity').innerHTML = '<b>待設定</b> GITHUB_TOKEN 未設定。';
+    return;
+  }
   await loadItems();
 }
 
