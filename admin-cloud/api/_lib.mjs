@@ -50,6 +50,10 @@ function secret() {
   return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || 'local-dev-session-secret';
 }
 
+function secretKey() {
+  return Buffer.from(secret(), 'utf8');
+}
+
 export function adminPassword() {
   if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
   return isCloud() ? '' : 'galilee2026';
@@ -58,7 +62,7 @@ export function adminPassword() {
 export function signSession() {
   const exp = Math.floor(Date.now() / 1000) + ONE_DAY;
   const payload = Buffer.from(JSON.stringify({ exp })).toString('base64url');
-  const sig = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
+  const sig = crypto.createHmac('sha256', secretKey()).update(payload).digest('base64url');
   return `${payload}.${sig}`;
 }
 
@@ -67,7 +71,7 @@ export function isAuthed(req) {
   if (!token) return false;
   const [payload, sig] = token.split('.');
   if (!payload || !sig) return false;
-  const expected = crypto.createHmac('sha256', secret()).update(payload).digest('base64url');
+  const expected = crypto.createHmac('sha256', secretKey()).update(payload).digest('base64url');
   if (Buffer.byteLength(sig) !== Buffer.byteLength(expected)) return false;
   if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
   try {
