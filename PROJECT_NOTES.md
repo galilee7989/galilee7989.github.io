@@ -43,6 +43,8 @@
 - 雙擊 `後台管理.bat`（或 `npm run admin`）→ 瀏覽器開 http://127.0.0.1:4330/ → 密碼在 `scripts/admin-config.json`。
 - 新增禱告信／照片後，`git commit` + `git push` 讓網站更新。
 
+> ⚠️ **上傳大小限制**：雲端後台（Vercel）與 Pages CMS 單次上傳約 **4–5MB 上限**；超過會回「Request Entity Too Large」，前端可能顯示「…is not valid JSON」。大檔請先壓縮 PDF（如 iLovePDF「壓縮 PDF」）到 3MB 以內，或改用本機後台（走 git push，單檔上限 100MB）。教會禱告信通常約 1MB。
+
 ## 四、本機預覽與啟動檔
 
 - `一鍵啟動.bat`：建置並同時開「前站」＋「本機後台」。
