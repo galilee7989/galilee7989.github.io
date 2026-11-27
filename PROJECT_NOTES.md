@@ -58,7 +58,7 @@
 - 首頁與禱告信列表會依月份代碼（`slug`，即檔名 `YYYY-MM`）由新到舊自動排序，所以新增的內容會排到最前面。`date` 只供後台顯示（慣例為該月 1 日）。
 - 建置時會驗證每篇的檔名、`slug` 與 PDF 是否存在，有問題就建置失敗，壞資料不會上線。改完必跑 `npm run verify`。
 - 網站樣式：`public/styles/global.css`。版面元件在 `src/layouts`、`src/components`、`src/pages`。
-- 圖片：`public/images/logo.png`（頁首標誌）、`public/images/hero.png`（英雄區與事工方框背景）。
+- 圖片：`public/images/logo.webp`（頁首標誌，278×224）、`public/images/hero.webp`（英雄區與事工方框背景）、`public/images/og-cover.jpg`（分享預覽用，1200×630）。原本的 `logo.png`、`hero.png` 共 2.8MB，2026-11 轉成 WebP 後約 160KB，可在 git 歷史取回。
 - 部署設定：`.github/workflows/deploy.yml`（GitHub Actions；**必須 `node-version: 22`**，Astro 7 不支援 Node 20）。
 
 ## 六、禱告信 PDF 檢視方式

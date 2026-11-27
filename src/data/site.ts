@@ -1,5 +1,8 @@
 import galleryImages from './gallery.json';
 
+// 正式網址（無 www）；canonical 與分享標籤都以它為準
+export const siteUrl = 'https://galilee.org.tw';
+
 export const navItems = [
   { label: '首頁', href: '/' },
   { label: '禱告信', href: '/prayletter/' },
@@ -12,7 +15,7 @@ export const contact = {
   address: '新北市新店區北新路一段 89 號 10 樓之 3',
   phone: '02-29137225',
   fax: '02-86658221',
-  website: 'https://www.galilee.org.tw',
+  website: siteUrl,
   postalAccount: '1514 6314',
   bank: '合作金庫（銀行代碼006）',
   bankAccount: '0080-717 402 620',

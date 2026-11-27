@@ -1,5 +1,6 @@
 ---
 import { prayletters } from '../../data/prayletters';
+import { siteUrl } from '../../data/site';
 
 export function getStaticPaths() {
   return prayletters.map((item) => ({
@@ -9,6 +10,10 @@ export function getStaticPaths() {
 }
 
 const { item } = Astro.props;
+const pageTitle = `${item.title}｜財團法人基督教加利利傳道會`;
+const pageUrl = `${siteUrl}/prayletter/${item.slug}/`;
+const description = `${item.title}，歡迎閱讀與代禱。`;
+const shareImage = `${siteUrl}/images/og-cover.jpg`;
 ---
 
 <!doctype html>
@@ -16,7 +21,22 @@ const { item } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{item.title}｜財團法人基督教加利利傳道會</title>
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={pageUrl} />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="財團法人基督教加利利傳道會" />
+    <meta property="og:locale" content="zh_TW" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
     <style>
       :root { --orange: #e35a0f; --gold: #f4b43c; }
       html, body { margin: 0; background: #2a2622; font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
@@ -43,7 +63,7 @@ const { item } = Astro.props;
       <div class="msg" id="msg">PDF 載入中，請稍候…</div>
     </div>
 
-    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
     <script is:inline define:vars={{ pdfUrl: item.pdf }}>
       (function () {
         var container = document.getElementById('pdf');
@@ -60,7 +80,8 @@ const { item } = Astro.props;
 
         fetch(pdfUrl)
           .then(function (r) { if (!r.ok) throw new Error(r.status); return r.arrayBuffer(); })
-          .then(function (buf) { return pdfjsLib.getDocument({ data: buf }).promise; })
+          // isEvalSupported: false 關閉 PDF.js 內部的 eval，避免惡意 PDF 經由字型程式碼執行腳本
+          .then(function (buf) { return pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise; })
           .then(function (pdf) {
             container.innerHTML = '';
             var width = Math.min((container.clientWidth || 360) - 20, 900);
