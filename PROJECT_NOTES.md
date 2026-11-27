@@ -17,7 +17,7 @@
 1. 安裝 Git 與 Node.js（22 版以上）。
 2. `git clone https://github.com/galilee7989/galilee7989.github.io.git`
 3. 進資料夾 `npm install`。
-4. 之後改內容 → `git add . && git commit -m "說明" && git push`，GitHub 會自動重建上線。
+4. 之後改內容 → `npm run verify` 確認通過 → `git add <改過的檔案> && git commit -m "說明" && git push`，GitHub 會自動重建上線。
 
 看歷史：`git log --oneline`。
 
@@ -43,7 +43,7 @@
 - 雙擊 `後台管理.bat`（或 `npm run admin`）→ 瀏覽器開 http://127.0.0.1:4330/ → 密碼在 `scripts/admin-config.json`。
 - 新增禱告信／照片後，`git commit` + `git push` 讓網站更新。
 
-> ⚠️ **上傳大小限制**：雲端後台（Vercel）與 Pages CMS 單次上傳約 **4–5MB 上限**；超過會回「Request Entity Too Large」，前端可能顯示「…is not valid JSON」。大檔請先壓縮 PDF（如 iLovePDF「壓縮 PDF」）到 3MB 以內，或改用本機後台（走 git push，單檔上限 100MB）。教會禱告信通常約 1MB。
+> ⚠️ **上傳大小限制**：雲端後台的 PDF 上限為 3MB，選檔時就會擋下並提示原因；Pages CMS 約 4–5MB。大檔請先壓縮 PDF（如 iLovePDF「壓縮 PDF」），或改用本機後台（上限 30MB，走 git push）。教會禱告信通常約 1MB。
 
 ## 四、本機預覽與啟動檔
 
@@ -55,7 +55,8 @@
 
 - 禱告信資料：`src/data/prayletters/`（一篇一個 JSON，每筆有 title / slug / date / pdf）。PDF 檔在 `public/prayletters/<年>/<年月>.pdf` 或 Pages CMS 上傳選定的位置。
 - 照片資料：`src/data/gallery.json`（陣列，每筆 src / alt）。圖片在 `public/images/`。
-- 首頁與禱告信列表會依 `date` 由新到舊自動排序，所以新增的內容會排到最前面。
+- 首頁與禱告信列表會依月份代碼（`slug`，即檔名 `YYYY-MM`）由新到舊自動排序，所以新增的內容會排到最前面。`date` 只供後台顯示（慣例為該月 1 日）。
+- 建置時會驗證每篇的檔名、`slug` 與 PDF 是否存在，有問題就建置失敗，壞資料不會上線。改完必跑 `npm run verify`。
 - 網站樣式：`public/styles/global.css`。版面元件在 `src/layouts`、`src/components`、`src/pages`。
 - 圖片：`public/images/logo.png`（頁首標誌）、`public/images/hero.png`（英雄區與事工方框背景）。
 - 部署設定：`.github/workflows/deploy.yml`（GitHub Actions；**必須 `node-version: 22`**，Astro 7 不支援 Node 20）。
@@ -77,3 +78,12 @@
 - 禱告信改用 PDF.js 內嵌檢視，修正手機無法觀看。
 - 加入 Pages CMS 網頁後台（.pages.yml），可從任何瀏覽器登入管理。
 - 加入客製雲端後台 `admin-cloud/` 並部署到 Vercel；「登入」鈕改連客製後台。
+
+## 九、變更歷史摘要（2026-11）
+
+- 雲端後台安全強化：登入失敗節流、常數時間密碼比對、session secret 缺值時拒絕服務、移除程式與文件中的預設密碼。
+- 本機後台修補未登入即可讀取專案內任意檔案的問題。
+- 雲端後台上傳：選檔時即檢查 3MB 上限、平台層錯誤顯示可讀原因、驗證 PDF 檔頭。
+- 禱告信排序改依 `slug`，不再依賴人工填寫的 `date`（2026-11-01 曾有 46 篇因日期填錯而排序錯位）。
+- 建置時驗證禱告信資料，新增 `npm run verify`；後台的日期改由伺服器從月份代碼自動產生。
+- 導正各文件互相矛盾之處（日期規則、`git add .`、預覽埠、專案路徑、部署方式）。

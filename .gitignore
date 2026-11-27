@@ -12,6 +12,9 @@ npm-debug.log*
 preview.html
 preview-*.html
 
+# AI 助理的本機設定
+.claude/
+
 # 後台密碼設定（避免公開；伺服器第一次啟動會自動產生隨機密碼）
 scripts/admin-config.json
 

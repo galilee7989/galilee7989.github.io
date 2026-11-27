@@ -10,6 +10,7 @@ let state = {
 };
 
 const MAX_PDF_BYTES = 3 * 1024 * 1024;
+const SITE_URL = 'https://galilee.org.tw';
 
 // 平台層的錯誤（檔案太大、逾時等）回的不是 JSON，要另外處理，否則只會看到「not valid JSON」
 function httpError(res) {
@@ -46,10 +47,6 @@ function plusMonth(slug) {
 function titleFromSlug(slug) {
   const [year, month] = slug.split('-');
   return `${year}年${month}月禱告信`;
-}
-
-function dateFromSlug(slug) {
-  return `${slug}-01`;
 }
 
 function fileToBase64(file) {
@@ -156,15 +153,13 @@ function renderApp() {
               <label for="title">標題</label>
               <input class="control" id="title" value="${titleFromSlug(nextSlug)}" />
             </div>
-            <div class="row">
-              <div class="field">
-                <label for="date">發布日期</label>
-                <input class="control" id="date" type="date" value="${dateFromSlug(nextSlug)}" />
-              </div>
-              <div class="field">
-                <label>網站路徑</label>
-                <input class="control" id="pathPreview" readonly />
-              </div>
+            <div class="field">
+              <label for="pagePreview">發布後的網頁</label>
+              <input class="control" id="pagePreview" readonly />
+            </div>
+            <div class="field">
+              <label for="pathPreview">PDF 路徑</label>
+              <input class="control" id="pathPreview" readonly />
             </div>
             <div class="field">
               <label for="pdf">PDF 檔案</label>
@@ -216,7 +211,6 @@ function renderRows(query) {
     if (!item) return;
     document.getElementById('slug').value = item.slug;
     document.getElementById('title').value = item.title;
-    document.getElementById('date').value = String(item.date).slice(0, 10);
     updatePathPreview();
     showForm('info', '已帶入既有月份。若發布，會覆蓋同月份 JSON 與 PDF。');
   }));
@@ -229,12 +223,12 @@ function showForm(type, text) {
 }
 
 function updatePathPreview() {
-  const slug = document.getElementById('slug').value;
+  const slug = document.getElementById('slug').value.trim();
   const [year, month] = slug.split('-');
-  const preview = /^\d{4}$/.test(year) && /^\d{2}$/.test(month) ? `/prayletters/${year}/${year}${month}.pdf` : '';
-  document.getElementById('pathPreview').value = preview;
+  const valid = /^\d{4}$/.test(year) && /^\d{2}$/.test(month);
+  document.getElementById('pathPreview').value = valid ? `/prayletters/${year}/${year}${month}.pdf` : '';
+  document.getElementById('pagePreview').value = valid ? `${SITE_URL}/prayletter/${slug}/` : '';
   if (!document.getElementById('title').dataset.touched) document.getElementById('title').value = titleFromSlug(slug);
-  if (!document.getElementById('date').dataset.touched) document.getElementById('date').value = dateFromSlug(slug);
   const exists = state.items.find((item) => item.slug === slug);
   if (exists) showForm('info', `注意：${slug} 已存在。發布會更新「${exists.title}」。`);
 }
@@ -248,7 +242,6 @@ function bindApp() {
   document.getElementById('search').addEventListener('input', (event) => renderRows(event.target.value));
   document.getElementById('slug').addEventListener('input', updatePathPreview);
   document.getElementById('title').addEventListener('input', (event) => { event.target.dataset.touched = '1'; });
-  document.getElementById('date').addEventListener('input', (event) => { event.target.dataset.touched = '1'; });
   document.getElementById('pdf').addEventListener('change', (event) => {
     state.pdfFile = event.target.files[0] || null;
     document.getElementById('drop').classList.toggle('has-file', Boolean(state.pdfFile));
@@ -278,7 +271,6 @@ async function publish(event) {
       body: JSON.stringify({
         slug,
         title: document.getElementById('title').value,
-        date: document.getElementById('date').value,
         pdfBase64: await fileToBase64(state.pdfFile),
       }),
     });

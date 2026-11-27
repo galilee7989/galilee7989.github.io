@@ -66,7 +66,7 @@ for (const post of posts) {
   items.push({
     title,
     slug,
-    date: post.date,
+    date: `${slug}-01`,
     pdf: localPdf,
     originalUrl: post.link,
   });

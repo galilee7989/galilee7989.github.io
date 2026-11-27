@@ -17,7 +17,8 @@ export default async function handler(req, res) {
     const entry = {
       title: String(body.title || `${year}年${month}月禱告信`).trim(),
       slug,
-      date: String(body.date || `${year}-${month}-01`),
+      // 一律由月份代碼推導成該月 1 日，不採用使用者輸入的日期
+      date: `${year}-${month}-01`,
       pdf: `/prayletters/${year}/${year}${month}.pdf`,
       originalUrl: '',
     };

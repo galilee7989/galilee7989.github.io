@@ -15,11 +15,13 @@
 - 上線：push 到 `main` → `.github/workflows/deploy.yml`（`withastro/action@v3`）自動建置部署。
 - **重要：workflow 必須指定 `node-version: 22`**（Astro 7 不支援 Node 20，否則 build 失敗）。
 - 自訂網域：`public/CNAME` = `galilee.org.tw`；TWNIC DNS 設 A 記錄 185.199.108–111.153 + `www` CNAME → `galilee7989.github.io`。
+- **改完必跑 `npm run verify`**（建置＋資料驗證＋清單順序檢查），通過才 commit。
 
 ## 資料模型
 
 - **禱告信**：collection，每月一檔 `src/data/prayletters/<YYYY-MM>.json`，欄位 `{ title, slug, date, pdf, originalUrl? }`。
-  - 由 `src/data/prayletters.ts` 用 `import.meta.glob('./prayletters/*.json')` 載入；`sortPrayletters()` 依 `date` 由新到舊排序。
+  - 由 `src/data/prayletters.ts` 用 `import.meta.glob('./prayletters/*.json')` 載入；`sortPrayletters()` 依 `slug`（即檔名 `YYYY-MM`）由新到舊排序。`date` 只供後台顯示，慣例為該月 1 日。
+  - 載入時會驗證檔名格式、`slug` 與檔名一致、`title` 非空、PDF 檔存在；任何一項不通過就讓建置失敗。
   - PDF 實體檔在 `public/prayletters/<YYYY>/<YYYYMM>.pdf`。
   - （註：舊的單一 `src/data/prayletters.json` 已淘汰、移除。）
 - **照片**：`src/data/gallery.json`（陣列 `{ src, alt }`），圖片在 `public/images/`；CMS 新上傳圖片放 `public/uploads/`。由 `src/data/site.ts` 匯出（另含 `navItems`、`contact`）。
@@ -36,7 +38,7 @@
 2. **Pages CMS**：`app.pagescms.org`，設定檔 `.pages.yml`。主要用於照片，禱告信亦可。
 3. **本機後台**：`scripts/admin-server.mjs`（`後台管理.bat` 或 `npm run admin`，localhost:4330，密碼在 `scripts/admin-config.json`）。改完需 `git push`。
 
-> ⚠️ 上傳大小限制：雲端後台與 Pages CMS 都經 Vercel/serverless，單次上傳約 **4–5MB 上限**；超過會回「Request Entity Too Large」（前端可能顯示「…is not valid JSON」）。大檔要先壓縮 PDF，或改用本機後台（走 git push，單檔上限 100MB）。
+> ⚠️ 上傳大小限制：雲端後台的 PDF 上限為 **3MB**，選檔時就會擋下並提示原因；Pages CMS 約 4–5MB。大檔要先壓縮 PDF，或改用本機後台（上限 30MB，走 git push）。
 
 ## 慣例與注意事項
 

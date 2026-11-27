@@ -10,10 +10,11 @@
 
 - **正本在 GitHub**，本機資料夾只是工作副本；搬移／換機一律 `git clone` 重抓，勿跨磁碟剪貼 `.git`。
 - **部署**：push 到 `main` → GitHub Actions（`.github/workflows/deploy.yml`）自動建置部署。workflow **必須 `node-version: 22`**（Astro 7 不支援 Node 20）。
-- **禱告信是 collection**：每月一檔 `src/data/prayletters/<YYYY-MM>.json`（欄位 `title/slug/date/pdf/originalUrl?`），PDF 實體檔在 `public/prayletters/<YYYY>/<YYYYMM>.pdf`；由 `src/data/prayletters.ts`（`import.meta.glob`）載入並依 `date` 由新到舊排序。（舊的單一 `prayletters.json` 已移除。）
+- **改完必跑 `npm run verify`**（建置＋資料驗證＋清單順序檢查），通過才 commit。
+- **禱告信是 collection**：每月一檔 `src/data/prayletters/<YYYY-MM>.json`（欄位 `title/slug/date/pdf/originalUrl?`），PDF 實體檔在 `public/prayletters/<YYYY>/<YYYYMM>.pdf`；由 `src/data/prayletters.ts`（`import.meta.glob`）載入並依 `slug`（即檔名 `YYYY-MM`）由新到舊排序。`date` 只供後台顯示（慣例為該月 1 日）。建置時會驗證檔名、`slug` 與 PDF，有問題就建置失敗。（舊的單一 `prayletters.json` 已移除。）
 - **照片**：`src/data/gallery.json`（`{src, alt}`），由 `src/data/site.ts` 匯出。
 - **內容後台三種，主用雲端**：`admin-cloud/`（Vercel，https://admin-cloud-six.vercel.app/ ，網站「登入」鈕連此）；其次 Pages CMS（`.pages.yml`）；本機 `scripts/admin-server.mjs`（`後台管理.bat`）。
-  - ⚠️ 雲端後台與 Pages CMS 單次上傳約 **4–5MB 上限**（超過回「Request Entity Too Large」／前端顯示「not valid JSON」）；大檔先壓縮 PDF 或用本機後台（走 git push，單檔上限 100MB）。
+  - ⚠️ 雲端後台的 PDF 上限為 **3MB**（選檔時就會擋下並提示原因）；Pages CMS 約 4–5MB。大檔先壓縮 PDF，或改用本機後台（上限 30MB，走 git push）。
 - **勿提交** `scripts/admin-config.json`（含密碼，已 gitignore）。
 - Windows CRLF 常讓 `git status` 顯示大量「已修改」，多為純換行差異（`git diff -w` 確認），提交時只 `git add` 你實際改動的檔，勿 `git add .` 造成整包換行雜訊。
 

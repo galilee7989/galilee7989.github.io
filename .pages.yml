@@ -48,10 +48,10 @@ content:
           regex: "^[0-9]{4}-(0[1-9]|1[0-2])$"
           message: 請使用 YYYY-MM 格式，例如 2026-07
       - name: date
-        label: 發布日期
+        label: 日期（僅供記錄）
         type: date
         required: true
-        description: 通常選該月份 1 日即可；清單以月份代碼排序。
+        description: 清單排序只看月份代碼，此欄位不影響順序。慣例填該月份的 1 日。
         options:
           format: yyyy-MM-dd
       - name: pdf
