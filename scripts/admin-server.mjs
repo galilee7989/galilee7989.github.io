@@ -39,7 +39,21 @@ function loadConfig() {
   process.exit(1);
 }
 let config = loadConfig();
-const tokenFor = (pw) => crypto.createHash('sha256').update(SALT + ':' + pw).digest('hex');
+// 登入權杖帶過期時間（12 小時），簽章含密碼：改密碼後舊權杖立即失效
+const TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
+const signToken = (pw) => {
+  const payload = (Date.now() + TOKEN_TTL_MS).toString(36);
+  const sig = crypto.createHmac('sha256', SALT + ':' + pw).update(payload).digest('base64url');
+  return payload + '.' + sig;
+};
+const checkToken = (token, pw) => {
+  const [payload, sig] = String(token || '').split('.');
+  if (!payload || !sig) return false;
+  const expected = crypto.createHmac('sha256', SALT + ':' + pw).update(payload).digest('base64url');
+  if (sig.length !== expected.length) return false;
+  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return false;
+  return parseInt(payload, 36) > Date.now();
+};
 const safeEqual = (a, b) => {
   const digest = (v) => crypto.createHash('sha256').update(String(v), 'utf8').digest();
   return crypto.timingSafeEqual(digest(a), digest(b));
@@ -54,7 +68,7 @@ function cookies(req) {
   (req.headers.cookie || '').split(';').forEach((p) => { const i = p.indexOf('='); if (i > 0) out[p.slice(0, i).trim()] = p.slice(i + 1).trim(); });
   return out;
 }
-const isAuthed = (req) => cookies(req).admin_token === tokenFor(config.password);
+const isAuthed = (req) => checkToken(cookies(req).admin_token, config.password);
 function ymKey(x) {
   const slugMatch = String(x.slug || '').match(/^(\d{4})-(\d{2})$/);
   if (slugMatch) return parseInt(slugMatch[1] + slugMatch[2], 10);
@@ -106,7 +120,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'POST' && url === '/api/login') {
       const { password } = JSON.parse(await readBody(req));
       if (password && safeEqual(password, config.password)) {
-        const cookie = `admin_token=${tokenFor(config.password)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`;
+        const cookie = `admin_token=${signToken(config.password)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`;
         return send(res, 200, JSON.stringify({ ok: true }), 'application/json', { 'Set-Cookie': cookie });
       }
       return send(res, 401, JSON.stringify({ error: '密碼錯誤' }));
@@ -141,7 +155,7 @@ const server = http.createServer(async (req, res) => {
       if (!next || String(next).length < 8) return send(res, 400, JSON.stringify({ error: '新密碼至少 8 個字元' }));
       config.password = String(next);
       writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
-      const cookie = `admin_token=${tokenFor(config.password)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`;
+      const cookie = `admin_token=${signToken(config.password)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`;
       return send(res, 200, JSON.stringify({ ok: true }), 'application/json', { 'Set-Cookie': cookie });
     }
 

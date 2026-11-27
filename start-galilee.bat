@@ -36,6 +36,16 @@ if errorlevel 1 (
   exit /b 1
 )
 
+rem Check if the site port is already listening; if so, just open the browser.
+netstat -ano 2>nul | findstr ":48732" | findstr "LISTENING" >nul 2>nul
+if not errorlevel 1 (
+  echo WARNING: Port 48732 is already in use - a server seems to be running already.
+  echo Opening the browser to the existing server without starting another one.
+  start "" http://127.0.0.1:48732/
+  pause
+  exit /b 0
+)
+
 echo.
 echo Serving at http://127.0.0.1:%PORT%/
 echo Press Ctrl+C to stop the server.

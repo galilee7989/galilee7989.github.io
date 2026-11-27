@@ -19,9 +19,17 @@ if not exist "node_modules\" (
 echo 建置網站中，請稍候（約 10-30 秒）...
 call npm.cmd run build
 if errorlevel 1 ( echo 建置失敗 & pause & exit /b 1 )
-echo 啟動前站與後台管理...
-start "加利利-前站" cmd /k "chcp 65001>nul&&set PORT=48732&&node scripts\serve-dist.mjs"
-start "加利利-後台管理" cmd /k "chcp 65001>nul&&node scripts\admin-server.mjs"
+rem Check ports first: if a service is already listening, do not start a second copy.
+set "SITE_RUNNING="
+set "ADMIN_RUNNING="
+netstat -ano 2>nul | findstr ":48732" | findstr "LISTENING" >nul 2>nul
+if not errorlevel 1 set "SITE_RUNNING=1"
+netstat -ano 2>nul | findstr ":4330" | findstr "LISTENING" >nul 2>nul
+if not errorlevel 1 set "ADMIN_RUNNING=1"
+if defined SITE_RUNNING echo [!] Port 48732 in use - keeping the existing site server.
+if defined ADMIN_RUNNING echo [!] Port 4330 in use - keeping the existing admin server.
+if not defined SITE_RUNNING start "加利利-前站" cmd /k "chcp 65001>nul&&set PORT=48732&&node scripts\serve-dist.mjs"
+if not defined ADMIN_RUNNING start "加利利-後台管理" cmd /k "chcp 65001>nul&&node scripts\admin-server.mjs"
 timeout /t 3 >nul
 start "" http://127.0.0.1:48732/
 echo.

@@ -44,7 +44,8 @@
 
 - 不要提交 `scripts/admin-config.json`（含密碼，已 gitignore）；`.claude/` 已 gitignore。
 - 禱告信請透過後台新增，或手動在 `src/data/prayletters/` 加一個 `<YYYY-MM>.json`（欄位如上）＋放 PDF 到 `public/prayletters/<YYYY>/`。
-- Windows 換行（CRLF）常讓 `git status` 顯示一堆檔案「已修改」，多為純換行差異、無實質變更（可用 `git diff -w` 確認），一般可忽略。
+- Windows 換行（CRLF）常讓 `git status` 顯示一堆檔案「已修改」，多為純換行差異、無實質變更（可用 `git diff -w` 確認），一般可忽略。（`.gitattributes` 已定義換行政策：index 一律 LF、`.bat` 用 CRLF。）
+- 兩個後台的啟動器（`.bat`）都會先檢查 port，已被占用時只開瀏覽器、不重複啟動。
 - **搬移／換機一律用 `git clone` 重抓**，勿跨磁碟剪貼 `.git`（曾因此損壞 git 物件）。
 - 部署平台：GitHub Pages（前站）＋ Vercel（雲端後台）；兩者獨立。
 

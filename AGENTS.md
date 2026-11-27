@@ -16,7 +16,7 @@
 - **內容後台三種，主用雲端**：`admin-cloud/`（Vercel，https://admin-cloud-six.vercel.app/ ，網站「登入」鈕連此）；其次 Pages CMS（`.pages.yml`）；本機 `scripts/admin-server.mjs`（`後台管理.bat`）。
   - ⚠️ 雲端後台的 PDF 上限為 **3MB**（選檔時就會擋下並提示原因）；Pages CMS 約 4–5MB。大檔先壓縮 PDF，或改用本機後台（上限 30MB，走 git push）。
 - **勿提交** `scripts/admin-config.json`（含密碼，已 gitignore）。
-- Windows CRLF 常讓 `git status` 顯示大量「已修改」，多為純換行差異（`git diff -w` 確認），提交時只 `git add` 你實際改動的檔，勿 `git add .` 造成整包換行雜訊。
+- Windows CRLF 常讓 `git status` 顯示大量「已修改」，多為純換行差異（`git diff -w` 確認），提交時只 `git add` 你實際改動的檔，勿 `git add .` 造成整包換行雜訊。（`.gitattributes` 已定義換行政策：index 一律 LF、`.bat` 用 CRLF；新增檔案會自動套用。）
 
 ## 本機開發
 

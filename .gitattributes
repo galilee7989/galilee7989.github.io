@@ -1,0 +1,17 @@
+# 換行政策：index 一律 LF；工作樹預設 LF，Windows 批次檔用 CRLF。
+# 目的：根治 Windows 上 CRLF 造成的 git status 假「已修改」雜訊。
+* text=auto eol=lf
+
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二進位檔明確標記，不做任何轉換
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary

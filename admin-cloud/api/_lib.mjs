@@ -300,17 +300,75 @@ async function githubPathExists(pathname) {
   }
 }
 
-export async function listGithubPrayletters() {
-  const tree = await github('GET', `/repos/${config.owner}/${config.repo}/git/trees/${config.branch}?recursive=1`);
-  const files = tree.tree
-    .filter((item) => item.type === 'blob' && item.path.startsWith('src/data/prayletters/') && item.path.endsWith('.json'))
-    .map((item) => item.path);
-  const items = await Promise.all(files.map(async (file) => {
-    const raw = await fetch(`https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${file}`);
-    if (!raw.ok) throw new Error(`無法讀取 ${file}`);
-    return raw.json();
-  }));
+async function fetchRawJson(file) {
+  const raw = await fetch(`https://raw.githubusercontent.com/${config.owner}/${config.repo}/${config.branch}/${file}`);
+  if (!raw.ok) throw new Error(`無法讀取 ${file}`);
+  return raw.json();
+}
+
+// 一次 GraphQL 請求取回全部內容。fine-grained token 不支援 GraphQL（會回 401），
+// 因此失敗時一律退回逐檔抓取的 REST 流程。
+async function listGithubPraylettersGraphql() {
+  const token = String(process.env.GITHUB_TOKEN || '').trim();
+  if (!token) throw new Error('GITHUB_TOKEN 未設定');
+  const query = `query($owner:String!,$name:String!,$branch:String!) {
+    repository(owner:$owner,name:$name) {
+      object(expression:$branch) {
+        ... on Tree {
+          entries { name object { ... on Blob { text } } }
+        }
+      }
+    }
+  }`;
+  const res = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${token}`,
+      'content-type': 'application/json',
+      'user-agent': 'galilee-admin-cloud',
+    },
+    body: JSON.stringify({
+      query,
+      variables: {
+        owner: config.owner,
+        name: config.repo,
+        branch: `${config.branch}:src/data/prayletters`,
+      },
+    }),
+  });
+  const text = await res.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    payload = {};
+  }
+  if (!res.ok) throw new Error(`GitHub GraphQL ${res.status}: ${payload.message || 'request failed'}`);
+  if (payload.errors?.length) throw new Error(payload.errors.map((e) => e.message).join('; '));
+  const entries = payload.data?.repository?.object?.entries;
+  if (!Array.isArray(entries)) throw new Error('GitHub GraphQL 回應格式不符');
+  const items = [];
+  for (const entry of entries) {
+    if (!entry.name.endsWith('.json')) continue;
+    if (!entry.object || typeof entry.object.text !== 'string') {
+      throw new Error(`GraphQL 未取得 ${entry.name} 的內容`);
+    }
+    items.push(JSON.parse(entry.object.text));
+  }
   return items.sort((a, b) => monthKey(b) - monthKey(a));
+}
+
+export async function listGithubPrayletters() {
+  try {
+    return await listGithubPraylettersGraphql();
+  } catch {
+    const tree = await github('GET', `/repos/${config.owner}/${config.repo}/git/trees/${config.branch}?recursive=1`);
+    const files = tree.tree
+      .filter((item) => item.type === 'blob' && item.path.startsWith('src/data/prayletters/') && item.path.endsWith('.json'))
+      .map((item) => item.path);
+    const items = await Promise.all(files.map((file) => fetchRawJson(file)));
+    return items.sort((a, b) => monthKey(b) - monthKey(a));
+  }
 }
 
 export async function commitGithubPrayletter({ entry, pdfBase64 }) {

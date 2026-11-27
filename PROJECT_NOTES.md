@@ -87,3 +87,10 @@
 - 禱告信排序改依 `slug`，不再依賴人工填寫的 `date`（2026-11-01 曾有 46 篇因日期填錯而排序錯位）。
 - 建置時驗證禱告信資料，新增 `npm run verify`；後台的日期改由伺服器從月份代碼自動產生。
 - 導正各文件互相矛盾之處（日期規則、`git add .`、預覽埠、專案路徑、部署方式）。
+
+## 十、變更歷史摘要（2026-11 之後）
+
+- 相依套件弱點歸零；首頁圖片轉 WebP（2.8MB → 約 160KB）；全站加入 canonical／OG／Twitter 分享標籤與 og-cover.jpg；PDF.js 加完整性驗證；內容動畫改為無 JS 時也可見。
+- `.gitattributes` 定義換行政策（index LF、`.bat` CRLF）；`package.json` 加 `engines`（Node ≥22）；GitHub Actions 升級到最新版並消除 Node 20 棄用警告。
+- 本機後台登入權杖改為帶 12 小時過期的簽章，改密碼後舊權杖立即失效；啟動器先檢查 port，占用時不再重複啟動。
+- 雲端後台清單改用 1 個 GraphQL 請求取回（原為 107 個請求）；fine-grained token 不支援 GraphQL，失敗時自動退回原 REST 流程。
