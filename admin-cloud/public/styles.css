@@ -83,6 +83,16 @@ button { cursor: pointer; }
 .env-list span { display: flex; justify-content: space-between; gap: 8px; }
 .ok { color: var(--green); font-weight: 900; }
 .bad { color: var(--danger); font-weight: 900; }
+.env-warn {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #fff6e6;
+  color: #8a5a10;
+  border: 1px solid #f2ddb0;
+  font-size: 12px;
+  line-height: 1.5;
+}
 
 .main { padding: 28px; }
 .topbar {

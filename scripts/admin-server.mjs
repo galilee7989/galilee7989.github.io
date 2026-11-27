@@ -11,17 +11,39 @@ import { exec } from 'node:child_process';
 const root = path.resolve(fileURLToPath(import.meta.url), '..', '..');
 const praylettersDir = path.join(root, 'src', 'data', 'prayletters');
 const galleryPath = path.join(root, 'src', 'data', 'gallery.json');
-const configPath = path.join(root, 'scripts', 'admin-config.json');
-const PORT = 4330;
+const configPath = process.env.GALILEE_ADMIN_CONFIG
+  ? path.resolve(process.env.GALILEE_ADMIN_CONFIG)
+  : path.join(root, 'scripts', 'admin-config.json');
+const publicRoot = path.resolve(root, 'public');
+const PORT = Number(process.env.ADMIN_PORT || 4330);
 const SALT = 'galilee-admin-v1';
 const MIME = { '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
 
+// 密碼只存在 admin-config.json（已 gitignore）。第一次啟動就產生隨機密碼，
+// 且不印在螢幕上，以免進入任何主控台或紀錄。
 function loadConfig() {
-  if (!existsSync(configPath)) writeFileSync(configPath, JSON.stringify({ password: 'galilee2026' }, null, 2) + '\n');
-  try { return JSON.parse(readFileSync(configPath, 'utf8')); } catch { return { password: 'galilee2026' }; }
+  if (!existsSync(configPath)) {
+    writeFileSync(configPath, JSON.stringify({ password: crypto.randomBytes(9).toString('base64url') }, null, 2) + '\n');
+    console.log('====================================');
+    console.log(' 已產生新的後台管理密碼，存於：');
+    console.log(' ' + configPath);
+    console.log(' 請用記事本開啟該檔案查看（它不會被提交到 git）');
+    console.log('====================================');
+  }
+  try {
+    const parsed = JSON.parse(readFileSync(configPath, 'utf8'));
+    if (parsed && typeof parsed.password === 'string' && parsed.password) return parsed;
+  } catch { /* 往下統一報錯 */ }
+  console.error('後台密碼設定檔內容無效：' + configPath);
+  console.error('請修正成 {"password":"..."}，或刪除該檔案後重新啟動。');
+  process.exit(1);
 }
 let config = loadConfig();
 const tokenFor = (pw) => crypto.createHash('sha256').update(SALT + ':' + pw).digest('hex');
+const safeEqual = (a, b) => {
+  const digest = (v) => crypto.createHash('sha256').update(String(v), 'utf8').digest();
+  return crypto.timingSafeEqual(digest(a), digest(b));
+};
 
 function send(res, code, body, type = 'application/json', extraHeaders = {}) {
   res.writeHead(code, { 'Content-Type': type + '; charset=utf-8', 'Cache-Control': 'no-store', ...extraHeaders });
@@ -56,15 +78,24 @@ async function writePrayletter(entry) {
 }
 function readBody(req) {
   return new Promise((resolve, reject) => {
-    let d = '';
-    req.on('data', (c) => { d += c; if (d.length > 30 * 1024 * 1024) { reject(new Error('檔案過大（上限 30MB）')); req.destroy(); } });
-    req.on('end', () => resolve(d)); req.on('error', reject);
+    const chunks = []; let size = 0;
+    req.on('data', (c) => {
+      size += c.length;
+      if (size > 30 * 1024 * 1024) { reject(new Error('檔案過大（上限 30MB）')); req.destroy(); return; }
+      chunks.push(c);
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8'))); req.on('error', reject);
   });
 }
 
 const server = http.createServer(async (req, res) => {
   try {
     const url = decodeURI(req.url.split('?')[0]);
+    // 只接受本機位址的 Host，擋掉 DNS rebinding 之類的跨站存取
+    const host = String(req.headers.host || '');
+    if (host !== `127.0.0.1:${PORT}` && host !== `localhost:${PORT}`) {
+      return send(res, 403, JSON.stringify({ error: 'forbidden' }));
+    }
     const authed = isAuthed(req);
 
     // 首頁：未登入顯示登入頁，已登入顯示管理面板
@@ -74,7 +105,7 @@ const server = http.createServer(async (req, res) => {
     // 登入 / 登出
     if (req.method === 'POST' && url === '/api/login') {
       const { password } = JSON.parse(await readBody(req));
-      if (password && password === config.password) {
+      if (password && safeEqual(password, config.password)) {
         const cookie = `admin_token=${tokenFor(config.password)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`;
         return send(res, 200, JSON.stringify({ ok: true }), 'application/json', { 'Set-Cookie': cookie });
       }
@@ -86,8 +117,9 @@ const server = http.createServer(async (req, res) => {
 
     // 靜態預覽 PDF / 圖片（公開內容）
     if (req.method === 'GET' && (url.startsWith('/prayletters/') || url.startsWith('/images/'))) {
-      const f = path.join(root, 'public', url);
-      if (existsSync(f) && statSync(f).isFile()) {
+      // 正規化後必須仍在 public/ 裡，否則 ../ 可以讀到專案內任何檔案
+      const f = path.resolve(publicRoot, '.' + url);
+      if (f.startsWith(publicRoot + path.sep) && existsSync(f) && statSync(f).isFile()) {
         const ext = path.extname(f).toLowerCase();
         const h = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
         if (ext === '.pdf') h['Content-Disposition'] = 'inline';
@@ -105,8 +137,8 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url === '/api/password') {
       const { current, next } = JSON.parse(await readBody(req));
-      if (current !== config.password) return send(res, 401, JSON.stringify({ error: '目前密碼錯誤' }));
-      if (!next || String(next).length < 4) return send(res, 400, JSON.stringify({ error: '新密碼至少 4 個字元' }));
+      if (!safeEqual(current, config.password)) return send(res, 401, JSON.stringify({ error: '目前密碼錯誤' }));
+      if (!next || String(next).length < 8) return send(res, 400, JSON.stringify({ error: '新密碼至少 8 個字元' }));
       config.password = String(next);
       writeFileSync(configPath, JSON.stringify(config, null, 2) + '\n');
       const cookie = `admin_token=${tokenFor(config.password)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200`;
@@ -174,6 +206,7 @@ server.listen(PORT, '127.0.0.1', () => {
   console.log(' 加利利傳道會 後台管理已啟動');
   console.log(' 請在瀏覽器開啟： http://127.0.0.1:' + PORT + '/');
   console.log(' 管理密碼： 已設定（可在登入後修改）');
+  console.log(' 密碼設定檔： ' + configPath);
   console.log(' 關閉：在此視窗按 Ctrl+C');
   console.log('====================================');
 });
@@ -360,11 +393,11 @@ ${STYLE}
     <div class="card">
       <h2>修改密碼</h2><p class="hint">修改後會保存在 scripts/admin-config.json。</p>
       <label>目前密碼</label><input id="curpw" type="password" />
-      <label>新密碼（至少 4 字元）</label><input id="newpw" type="password" />
+      <label>新密碼（至少 8 字元）</label><input id="newpw" type="password" />
       <div class="actions"><button class="primary" id="savePwBtn">儲存新密碼</button></div>
       <div class="msg" id="pwmsg"></div>
     </div>
-    <div class="card"><h2>說明</h2><p class="hint">此後台只在本機（127.0.0.1）執行，不會對外公開。修改內容後，請按任一分頁的「重新建置網站」讓正式網站更新。</p></div>
+    <div class="card"><h2>說明</h2><p class="hint">此後台只在本機（127.0.0.1）執行，不會對外公開。新增或修改後，需要 git commit + git push，正式網站才會更新；「重新建置網站」只更新本機預覽。</p></div>
   </div>
 </div>
 <script>

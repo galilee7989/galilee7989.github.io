@@ -26,7 +26,7 @@ timeout /t 3 >nul
 start "" http://127.0.0.1:48732/
 echo.
 echo 前站： http://127.0.0.1:48732/
-echo 後台： http://127.0.0.1:4330/   （預設密碼 galilee2026）
+echo 後台： http://127.0.0.1:4330/   （密碼見 scripts\admin-config.json）
 echo.
 echo 前站與後台各自在新視窗執行，關閉請在該視窗按 Ctrl+C。
 echo 這個視窗可以直接關閉。

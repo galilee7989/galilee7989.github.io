@@ -12,7 +12,7 @@ npm-debug.log*
 preview.html
 preview-*.html
 
-# 後台密碼設定（避免公開；伺服器啟動時會自動重建預設值）
+# 後台密碼設定（避免公開；伺服器第一次啟動會自動產生隨機密碼）
 scripts/admin-config.json
 
 # 雲端後台本機環境變數

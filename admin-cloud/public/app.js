@@ -3,18 +3,34 @@ const app = document.getElementById('app');
 let state = {
   authed: false,
   env: {},
+  warnings: [],
   items: [],
   pdfFile: null,
   busy: false,
 };
+
+const MAX_PDF_BYTES = 3 * 1024 * 1024;
+
+// 平台層的錯誤（檔案太大、逾時等）回的不是 JSON，要另外處理，否則只會看到「not valid JSON」
+function httpError(res) {
+  if (res.status === 413) return new Error('檔案太大，超過雲端後台上限。請先把 PDF 壓縮到 3MB 以內，或改用本機後台。');
+  if (res.status === 429) return new Error('操作太過頻繁，請稍後再試。');
+  return new Error(`請求失敗（HTTP ${res.status}）`);
+}
 
 const api = async (url, options = {}) => {
   const res = await fetch(url, {
     ...options,
     headers: { 'content-type': 'application/json', ...(options.headers || {}) },
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || '請求失敗');
+  const text = await res.text();
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {};
+  }
+  if (!res.ok) throw data.error ? new Error(data.error) : httpError(res);
   return data;
 };
 
@@ -90,6 +106,12 @@ function envRows() {
   )).join('');
 }
 
+function warningRows() {
+  return state.warnings.includes('weak_session_secret')
+    ? '<p class="env-warn">ADMIN_SESSION_SECRET 偏短，建議換成 32 字元以上的隨機字串。</p>'
+    : '';
+}
+
 function renderApp() {
   const latest = state.items[0];
   const nextSlug = plusMonth(latest?.slug);
@@ -107,6 +129,7 @@ function renderApp() {
         </nav>
         <div class="sidebar-foot">
           <div class="env-list">${envRows()}</div>
+          ${warningRows()}
           <button class="ghost" id="logoutBtn">登出</button>
         </div>
       </aside>
@@ -229,7 +252,9 @@ function bindApp() {
   document.getElementById('pdf').addEventListener('change', (event) => {
     state.pdfFile = event.target.files[0] || null;
     document.getElementById('drop').classList.toggle('has-file', Boolean(state.pdfFile));
-    document.getElementById('fileName').textContent = state.pdfFile ? `${state.pdfFile.name} (${Math.round(state.pdfFile.size / 1024)} KB)` : '選擇每月禱告信 PDF';
+    document.getElementById('fileName').textContent = state.pdfFile
+      ? `${state.pdfFile.name} (${Math.round(state.pdfFile.size / 1024)} KB)${state.pdfFile.size > MAX_PDF_BYTES ? ' — 超過 3MB 上限' : ''}`
+      : '選擇每月禱告信 PDF';
   });
   document.getElementById('publishForm').addEventListener('submit', publish);
 }
@@ -238,6 +263,12 @@ async function publish(event) {
   event.preventDefault();
   if (state.busy) return;
   if (!state.pdfFile) return showForm('err', '請先選擇 PDF 檔案。');
+  if (state.pdfFile.size > MAX_PDF_BYTES) {
+    return showForm('err', `PDF 太大（${(state.pdfFile.size / 1024 / 1024).toFixed(1)} MB），雲端後台上限為 3MB。請先壓縮後再上傳，或改用本機後台。`);
+  }
+  const slug = document.getElementById('slug').value.trim();
+  const existing = state.items.find((item) => item.slug === slug);
+  if (existing && !window.confirm(`${slug} 已存在（${existing.title}）。\n確定要用新的 PDF 覆蓋這個月份嗎？`)) return;
   state.busy = true;
   document.getElementById('publishBtn').disabled = true;
   showForm('info', '正在上傳並建立 GitHub commit...');
@@ -245,16 +276,22 @@ async function publish(event) {
     const result = await api('/api/publish', {
       method: 'POST',
       body: JSON.stringify({
-        slug: document.getElementById('slug').value,
+        slug,
         title: document.getElementById('title').value,
         date: document.getElementById('date').value,
         pdfBase64: await fileToBase64(state.pdfFile),
       }),
     });
-    showForm('ok', `已發布 ${result.entry.title}\\nCommit: ${result.commitSha}`);
-    document.getElementById('activity').innerHTML = `<b>完成</b> ${escapeHtml(result.entry.title)} 已寫入 ${escapeHtml(result.mode)}。`;
+    let success = `已發布 ${result.entry.title}\nCommit: ${result.commitSha}\n網站約 1～2 分鐘後更新。`;
+    showForm('ok', success);
     state.pdfFile = null;
-    await loadItems();
+    // loadItems() 會重繪整個畫面，成功訊息要補回來才看得到
+    try {
+      await loadItems();
+    } catch {
+      success += '\n（清單更新失敗，請按「重新整理」；發布本身已成功。）';
+    }
+    showForm('ok', success);
   } catch (error) {
     showForm('err', error.message);
   } finally {
@@ -273,6 +310,7 @@ async function boot() {
   const session = await api('/api/session');
   state.authed = session.authenticated;
   state.env = session.env || {};
+  state.warnings = session.warnings || [];
   if (!state.authed) return renderLogin();
   if (!state.env.GITHUB_TOKEN) {
     state.items = [];

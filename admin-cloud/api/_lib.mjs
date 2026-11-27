@@ -5,6 +5,11 @@ import path from 'node:path';
 
 const ONE_DAY = 60 * 60 * 24;
 const COOKIE_NAME = 'galilee_admin';
+// 雲端平台的請求上限約 4.5MB；本機預覽也提前擋下，錯誤訊息才會一致
+const MAX_BODY_BYTES = 4_500_000;
+const MAX_LOGIN_FAILURES = 8;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
+const LOGIN_LOCK_MS = 15 * 60 * 1000;
 
 export const config = {
   owner: process.env.GITHUB_OWNER || 'galilee7989',
@@ -12,7 +17,7 @@ export const config = {
   branch: process.env.GITHUB_BRANCH || 'main',
 };
 
-function isCloud() {
+export function isCloud() {
   return Boolean(process.env.VERCEL || process.env.CF_PAGES || process.env.NODE_ENV === 'production');
 }
 
@@ -30,34 +35,138 @@ export function json(res, code, body, headers = {}) {
   res.end(JSON.stringify(body));
 }
 
+function readRawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    let done = false;
+    req.on('data', (chunk) => {
+      if (done) return;
+      size += chunk.length;
+      if (size > MAX_BODY_BYTES) {
+        done = true;
+        chunks.length = 0;
+        const error = new Error('檔案太大，超過雲端後台上限。請先把 PDF 壓縮到 3MB 以內，或改用本機後台。');
+        error.status = 413;
+        reject(error);
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (done) return;
+      done = true;
+      // 先收集成 Buffer 再解碼：逐塊轉字串會弄壞跨區塊的中文字
+      resolve(Buffer.concat(chunks).toString('utf8'));
+    });
+    req.on('error', (error) => {
+      if (done) return;
+      done = true;
+      reject(error);
+    });
+  });
+}
+
 export async function readJsonBody(req) {
-  let data = '';
-  for await (const chunk of req) data += chunk;
-  if (!data) return {};
-  return JSON.parse(data);
+  const text = await readRawBody(req);
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch {
+    const error = new Error('請求內容不是有效的 JSON。');
+    error.status = 400;
+    throw error;
+  }
 }
 
 function parseCookies(req) {
   const out = {};
   String(req.headers.cookie || '').split(';').forEach((part) => {
     const i = part.indexOf('=');
-    if (i > 0) out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+    if (i <= 0) return;
+    try {
+      out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+    } catch {
+      // 編碼不合法的 cookie 視同不存在
+    }
   });
   return out;
 }
 
 function secret() {
-  return process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || 'local-dev-session-secret';
+  const value = process.env.ADMIN_SESSION_SECRET;
+  if (value) return value;
+  if (!isCloud()) return process.env.ADMIN_PASSWORD || 'local-dev-session-secret';
+  // 正式環境寧可拒絕服務，也不退回任何寫死的字串
+  throw new Error('ADMIN_SESSION_SECRET 未設定：請到 Vercel 環境變數補上後重新部署。');
 }
 
 function secretKey() {
   return Buffer.from(secret(), 'utf8');
 }
 
-export function adminPassword() {
-  if (process.env.ADMIN_PASSWORD) return process.env.ADMIN_PASSWORD;
-  return isCloud() ? '' : 'galilee2026';
+export function sessionSecretWeak() {
+  return secret().length < 32;
 }
+
+// 正式環境設定不全時，任何 API 都先拋錯：寧可拒絕服務，也不要帶病運作
+export function assertConfigured() {
+  secretKey();
+}
+
+export function adminPassword() {
+  return process.env.ADMIN_PASSWORD || '';
+}
+
+export function verifyPassword(candidate, actual) {
+  const digest = (value) => crypto.createHash('sha256').update(String(value), 'utf8').digest();
+  return crypto.timingSafeEqual(digest(candidate), digest(actual));
+}
+
+export function clientIp(req) {
+  // 這兩個 header 由平台寫入；不採信用戶端可自行夾帶的 x-forwarded-for
+  const platform = req.headers['x-vercel-forwarded-for'] || req.headers['x-real-ip'];
+  if (typeof platform === 'string' && platform.trim()) return platform.split(',')[0].trim();
+  return (req.socket && req.socket.remoteAddress) || 'unknown';
+}
+
+// 記在函式執行個體的記憶體裡，雲端上只能盡力而為；真正的防線是夠長的隨機密碼
+export function createLoginThrottle({
+  maxFailures = MAX_LOGIN_FAILURES,
+  windowMs = LOGIN_WINDOW_MS,
+  lockMs = LOGIN_LOCK_MS,
+} = {}) {
+  const failures = new Map();
+
+  return {
+    lockedFor(ip) {
+      const record = failures.get(ip);
+      return record ? Math.max(0, record.lockedUntil - Date.now()) : 0;
+    },
+    recordFailure(ip) {
+      const now = Date.now();
+      for (const [key, record] of failures) {
+        if (now - record.firstAt > windowMs && record.lockedUntil <= now) failures.delete(key);
+      }
+      let record = failures.get(ip);
+      if (!record || now - record.firstAt > windowMs) {
+        record = { count: 0, firstAt: now, lockedUntil: 0 };
+        failures.set(ip, record);
+      }
+      record.count += 1;
+      if (record.count >= maxFailures) {
+        record.lockedUntil = now + lockMs;
+        record.count = 0;
+        record.firstAt = now;
+      }
+    },
+    clear(ip) {
+      failures.delete(ip);
+    },
+  };
+}
+
+export const loginThrottle = createLoginThrottle();
 
 export function signSession() {
   const exp = Math.floor(Date.now() / 1000) + ONE_DAY;
@@ -103,9 +212,22 @@ export function envStatus() {
 }
 
 export function requireAuth(req, res) {
-  if (isAuthed(req)) return true;
+  let authed = false;
+  try {
+    assertConfigured();
+    authed = isAuthed(req);
+  } catch (error) {
+    json(res, 500, { error: error.message });
+    return false;
+  }
+  if (authed) return true;
   json(res, 401, { error: '未登入' });
   return false;
+}
+
+export function decodePdf(base64) {
+  const buffer = Buffer.from(String(base64 || ''), 'base64');
+  return buffer.length >= 5 && buffer.subarray(0, 5).toString('latin1') === '%PDF-' ? buffer : null;
 }
 
 function monthKey(item) {
@@ -152,9 +274,30 @@ async function github(method, urlPath, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const text = await res.text();
-  const data = text ? JSON.parse(text) : {};
-  if (!res.ok) throw new Error(data.message || `GitHub API ${res.status}`);
+  let data = {};
+  try {
+    data = text ? JSON.parse(text) : {};
+  } catch {
+    data = {};
+  }
+  if (!res.ok) {
+    const message = data.message || `GitHub API ${res.status}`;
+    const friendly = res.status === 401 || res.status === 403 ? 'GITHUB_TOKEN 無效或權限不足' : null;
+    const error = new Error(friendly ? `${friendly}（GitHub：${message}）` : message);
+    error.status = res.status;
+    throw error;
+  }
   return data;
+}
+
+async function githubPathExists(pathname) {
+  // 只用來決定 commit 訊息寫「新增」還是「更新」；查不出來就當作不存在，不影響發布
+  try {
+    await github('GET', `/repos/${config.owner}/${config.repo}/contents/${pathname}?ref=${config.branch}`);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function listGithubPrayletters() {
@@ -175,7 +318,10 @@ export async function commitGithubPrayletter({ entry, pdfBase64 }) {
   const pdfName = `${year}${month}.pdf`;
   const pdfPath = `public/prayletters/${year}/${pdfName}`;
   const jsonPath = `src/data/prayletters/${entry.slug}.json`;
-  const ref = await github('GET', `/repos/${config.owner}/${config.repo}/git/ref/heads/${config.branch}`);
+  const [exists, ref] = await Promise.all([
+    githubPathExists(jsonPath),
+    github('GET', `/repos/${config.owner}/${config.repo}/git/ref/heads/${config.branch}`),
+  ]);
   const baseSha = ref.object.sha;
   const [pdfBlob, jsonBlob] = await Promise.all([
     github('POST', `/repos/${config.owner}/${config.repo}/git/blobs`, { content: pdfBase64, encoding: 'base64' }),
@@ -189,7 +335,7 @@ export async function commitGithubPrayletter({ entry, pdfBase64 }) {
     ],
   });
   const commit = await github('POST', `/repos/${config.owner}/${config.repo}/git/commits`, {
-    message: `新增 ${entry.title}`,
+    message: `${exists ? '更新' : '新增'} ${entry.title}`,
     tree: tree.sha,
     parents: [baseSha],
     author: {
